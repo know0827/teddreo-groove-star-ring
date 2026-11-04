@@ -1931,7 +1931,9 @@ function sectionBody(id){
         <h3>訂單資訊</h3>
         <div class="order-row"><span class="l">形狀 / 寬度</span><span class="v">${shapeInfo.name}・${state.width}mm</span></div>
         <div class="order-row"><span class="l">表面工藝</span><span class="v">${finishInfo.name}</span></div>
-        <div class="order-row"><span class="l">寶石</span><span class="v">${GEM_COLORS.find(g=>g.key===state.gemColor).name}</span></div>
+        <div class="order-row"><span class="l">主石(A)</span><span class="v">${gemNameOf(state.gemColor)}</span></div>
+        <div class="order-row"><span class="l">主石(B)</span><span class="v">${gemNameOf(state.gemColorB)}</span></div>
+        <div class="order-row"><span class="l">主石(C)</span><span class="v">${gemNameOf(state.gemColorC)}</span></div>
         <div class="order-row"><span class="l">星星設計</span><span class="v">${STAR_OPTIONS.find(o=>o.key===state.starCount).name}</span></div>
         <div class="order-row"><span class="l">小凹槽</span><span class="v">${NOTCH_OPTIONS.find(o=>o.key===state.notch).name}</span></div>
         <div class="order-row"><span class="l">刻字</span><span class="v">${engraveSummaryText()}</span></div>
