@@ -1769,7 +1769,7 @@ const SECTIONS = [
     return parts.length ? parts.join('・') : '不刻字';
   }},
   {id:'ringsize', num:'05', title:'戒指尺寸', summary:()=> state.ringSize ? `${state.ringSize} 號` : '尚未填寫'},
-  {id:'confirm', num:'06', title:'確認訂單與匯款', summary:()=>'查看完整摘要'}
+  {id:'confirm', num:'06', title:'確認訂製資訊', summary:()=>'查看完整摘要'}
 ];
 
 function engraveSummaryText(){
@@ -1931,9 +1931,7 @@ function sectionBody(id){
         <h3>訂單資訊</h3>
         <div class="order-row"><span class="l">形狀 / 寬度</span><span class="v">${shapeInfo.name}・${state.width}mm</span></div>
         <div class="order-row"><span class="l">表面工藝</span><span class="v">${finishInfo.name}</span></div>
-        <div class="order-row"><span class="l">主石(A)</span><span class="v">${gemNameOf(state.gemColor)}</span></div>
-        <div class="order-row"><span class="l">主石(B)</span><span class="v">${gemNameOf(state.gemColorB)}</span></div>
-        <div class="order-row"><span class="l">主石(C)</span><span class="v">${gemNameOf(state.gemColorC)}</span></div>
+        <div class="order-row"><span class="l">寶石</span><span class="v">${GEM_COLORS.find(g=>g.key===state.gemColor).name}</span></div>
         <div class="order-row"><span class="l">星星設計</span><span class="v">${STAR_OPTIONS.find(o=>o.key===state.starCount).name}</span></div>
         <div class="order-row"><span class="l">小凹槽</span><span class="v">${NOTCH_OPTIONS.find(o=>o.key===state.notch).name}</span></div>
         <div class="order-row"><span class="l">刻字</span><span class="v">${engraveSummaryText()}</span></div>
@@ -2109,9 +2107,6 @@ function setEngraveText(pos, val){
   if(ep) ep.innerHTML = engravePreviewSVG();
 }
 
-/* 三顆主石(A、B、C)的顏色名稱 */
-function gemNameOf(key){ const g = GEM_COLORS.find(x=>x.key===key); return g ? g.name : ''; }
-function gemSummaryText(){ return `A ${gemNameOf(state.gemColor)}・B ${gemNameOf(state.gemColorB)}・C ${gemNameOf(state.gemColorC)}`; }
 function buildOrderText(){
   const shapeInfo = SHAPES.find(s=>s.key===state.shape);
   const finishInfo = FINISHES.find(f=>f.key===state.finish);
@@ -2120,7 +2115,7 @@ function buildOrderText(){
     `戒指形狀:${shapeInfo.name}`,
     `戒指寬度:${state.width}mm`,
     `表面工藝:${finishInfo.name}`,
-    `寶石:${gemSummaryText()}`,
+    `寶石:${GEM_COLORS.find(g=>g.key===state.gemColor).name}`,
     `星星設計:${STAR_OPTIONS.find(o=>o.key===state.starCount).name}`,
     `小凹槽:${NOTCH_OPTIONS.find(o=>o.key===state.notch).name}`,
     `刻字內容:${engraveSummaryText()}`,
@@ -2189,7 +2184,7 @@ function buildOrderCanvas(){
     ['戒指形狀', shapeInfo.name],
     ['戒指寬度', state.width+'mm'],
     ['表面工藝', finishInfo.name],
-    ['主石顏色', gemSummaryText()],
+    ['主石顏色', gemInfo.name],
     ['星星設計', STAR_OPTIONS.find(o=>o.key===state.starCount).name],
     ['小凹槽', NOTCH_OPTIONS.find(o=>o.key===state.notch).name],
     ['刻字內容', engraveSummaryText()],
@@ -2294,9 +2289,7 @@ function buildDesignPhotoCanvas(){
     ['戒指形狀', shapeInfo.name],
     ['戒指寬度', state.width+'mm'],
     ['表面工藝', finishInfo.name],
-    ['主石(A)', gemNameOf(state.gemColor)],
-    ['主石(B)', gemNameOf(state.gemColorB)],
-    ['主石(C)', gemNameOf(state.gemColorC)],
+    ['主石顏色', gemInfo.name],
     ['星星設計', STAR_OPTIONS.find(o=>o.key===state.starCount).name],
     ['小凹槽', NOTCH_OPTIONS.find(o=>o.key===state.notch).name],
     ['戒指尺寸', state.ringSize ? state.ringSize+' 號' : '(尚未填寫)'],
@@ -2306,11 +2299,7 @@ function buildDesignPhotoCanvas(){
   const engraveH = 210;
   const colBlockH = Math.max(orderColH, engraveH);
   const footerH = 20;
-  /* 三顆主石(A、B、C)的小圖:各自轉到正對該顆主石的角度 */
-  const thumbGap = 16, thumbMargin = 60;
-  const thumbSize = Math.floor((W - thumbMargin*2 - thumbGap*2)/3);
-  const thumbBlockH = thumbSize + 46 + 28;
-  const H = topPad + titleBlockH + imgSize + 36 + thumbBlockH + colBlockH + 36 + footerH + 12;
+  const H = topPad + titleBlockH + imgSize + 36 + colBlockH + 36 + footerH + 12;
 
   const canvas = document.createElement('canvas');
   const OUT_SCALE = 2; /* 輸出解析度加倍,讓存下來的設計圖在手機上放大看也清晰 */
@@ -2336,31 +2325,6 @@ function buildDesignPhotoCanvas(){
   ctx.drawImage(ringImg, imgX, y, imgSize, imgSize);
   ctx.strokeStyle = '#e2ddcf'; ctx.lineWidth=1; ctx.strokeRect(imgX, y, imgSize, imgSize);
 
-  /* 三顆主石小圖:戒指固定用初始視角,繞中心軸轉到正對 A(90度)、B(210度)、C(330度) 那顆主石後各拍一張 */
-  {
-    const thumbY = y + imgSize + 36;
-    const keepRot = { x: ringGroup.rotation.x, y: ringGroup.rotation.y, z: ringGroup.rotation.z };
-    const slots = [
-      {label:'主石(A)', name:gemNameOf(state.gemColor), spin:0},
-      {label:'主石(B)', name:gemNameOf(state.gemColorB), spin:-THREE.MathUtils.degToRad(210-90)},
-      {label:'主石(C)', name:gemNameOf(state.gemColorC), spin:-THREE.MathUtils.degToRad(330-90)},
-    ];
-    slots.forEach((sl,i)=>{
-      const tx = thumbMargin + i*(thumbSize+thumbGap);
-      ringGroup.rotation.set(TILT_BASE, 0.25, sl.spin);
-      renderer.render(scene, camera);
-      ctx.fillStyle = '#f0ece3'; ctx.fillRect(tx, thumbY, thumbSize, thumbSize);
-      ctx.drawImage(ringImg, tx, thumbY, thumbSize, thumbSize);
-      ctx.strokeStyle = '#e2ddcf'; ctx.lineWidth=1; ctx.strokeRect(tx, thumbY, thumbSize, thumbSize);
-      ctx.textAlign='center';
-      ctx.fillStyle = '#26241f'; ctx.font = '600 17px "Noto Sans TC", sans-serif';
-      ctx.fillText(sl.label, tx+thumbSize/2, thumbY+thumbSize+24);
-      ctx.fillStyle = '#7c7669'; ctx.font = '15px "Noto Sans TC", sans-serif';
-      ctx.fillText(sl.name, tx+thumbSize/2, thumbY+thumbSize+46);
-    });
-    ringGroup.rotation.set(keepRot.x, keepRot.y, keepRot.z);
-  }
-
   /* 擷取完成,把渲染器還原回畫面上原本顯示的大小,避免留在高解析度狀態影響即時預覽的效能 */
   renderer.setSize(liveSize, liveSize, false);
   camera.aspect = 1;
@@ -2375,7 +2339,7 @@ function buildDesignPhotoCanvas(){
   ctx.fillText('以上設計圖僅提供品牌 teddreo 使用,未經許可禁止其他商業用途。', W/2, y+imgSize/2);
   ctx.restore();
 
-  y += imgSize + 36 + thumbBlockH;
+  y += imgSize + 36;
 
   /* 左右並排:訂單資訊與刻字字體預覽寬度一致 */
   const margin = 60, gapCols = 24;
@@ -2603,7 +2567,7 @@ async function submitDesignByLine(){
       shape_name: shapeInfo.name,
       width_mm: state.width + 'mm',
       finish_name: finishInfo.name,
-      gem_name: gemSummaryText(),
+      gem_name: gemInfo.name,
       ring_size: state.ringSize ? (state.ringSize + ' 號') : '(尚未填寫)',
       engrave_inner: engraveInner,
       engrave_outer: engraveOuter,
